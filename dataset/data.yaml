@@ -1,0 +1,13 @@
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 2
+names: ['particular', 'servicio_publico']
+
+roboflow:
+  workspace: placasp
+  project: custom-workflow-object-detection-xnkjs
+  version: 3
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/placasp/custom-workflow-object-detection-xnkjs/dataset/3
