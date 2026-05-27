@@ -1,9 +1,4 @@
-numpy
-opencv-python
-matplotlib
-scikit-learn
 ultralytics
 torch
-torchvision
+opencv-python-headless
 easyocr
-Pillow
