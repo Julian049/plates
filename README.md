@@ -102,4 +102,23 @@ plates-temp/
 ├── dataset/                   # (Opcional) Carpeta destinada a almacenar las imágenes y el archivo 'data.yaml' de entrenamiento.
 ├── out/                       # Carpeta autogenerada donde se almacenan los pesos entrenados y los resultados visuales.
 └── venv/                      # Entorno virtual de Python con las dependencias instaladas.
+
+---
+
+## Interfaz Web
+
+Puedes ejecutar la aplicación web desde la carpeta `plates` con:
+
+```bash
+pip install -r requirements.txt
+python app.py
+```
+
+Luego abre en el navegador:
+
+```bash
+http://127.0.0.1:5000
+```
+
+La página permite subir una imagen de placa de moto, muestra el resultado del backend, la imagen procesada, ambas gráficas de estadísticas y la tabla con la información de `out/detections.json`.
 ```

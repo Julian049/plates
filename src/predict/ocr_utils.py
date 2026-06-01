@@ -5,9 +5,15 @@ import easyocr
 _LETTER_TO_NUMBER = {"O": "0", "I": "1", "Z": "2", "S": "5", "B": "8", "G": "6", "D": "0"}
 _NUMBER_TO_LETTER = {"0": "O", "1": "I", "8": "B", "5": "S", "2": "Z", "6": "G"}
 
-# Inicializa el lector OCR configurado para detectar texto en español e inglés utilizando la GPU.
+_OCR_READER = None
+
+# Inicializa el lector OCR configurado para detectar texto en español e inglés.
+# El lector se crea una sola vez para evitar recargas costosas.
 def build_reader() -> easyocr.Reader:
-    return easyocr.Reader(["es", "en"], gpu=True)
+    global _OCR_READER
+    if _OCR_READER is None:
+        _OCR_READER = easyocr.Reader(["es", "en"], gpu=False)
+    return _OCR_READER
 
 # Ejecuta el motor OCR sobre la imagen o región de interés (ROI) preprocesada.
 # Se usa una lista blanca para restringir la detección exclusivamente a caracteres alfanuméricos,
