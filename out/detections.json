@@ -1,0 +1,16 @@
+[
+  {
+    "archivo": "2.jpg",
+    "placa": "Otro vehículo",
+    "confianza": 0.8953,
+    "categoria": "Otro vehículo",
+    "timestamp": "2026-05-31 22:57:13"
+  },
+  {
+    "archivo": "1.jpg",
+    "placa": "LOO48G",
+    "confianza": 0.8588,
+    "categoria": "Moto válida",
+    "timestamp": "2026-05-31 22:57:58"
+  }
+]
