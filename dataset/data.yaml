@@ -2,8 +2,8 @@ train: train/images
 val: valid/images
 test: test/images
 
-nc: 2
-names: ['particular', 'servicio_publico']
+nc: 1
+names: ['placa']
 
 roboflow:
   workspace: placasp

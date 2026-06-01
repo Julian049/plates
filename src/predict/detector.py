@@ -7,14 +7,12 @@ from ultralytics import YOLO
 from src.config.config import OUT_DIR
 from src.predict.image_utils import crop_plate_roi, preprocess_for_ocr
 from src.predict.ocr_utils import build_reader, read_text, correct_plate
-from src.pico_placa.checker import has_pico_placa
-from src.pico_placa.reporter import build_report
 
 # Índice de clase → etiqueta interna
-CLASSES = {0: "private", 1: "public_service"}
+CLASSES = {0: "placa"}
 
 # Color BGR por clase (verde = particular, naranja = servicio público)
-_COLORS = {"private": (0, 200, 0), "public_service": (0, 140, 255)}
+_COLORS = {"placa": (0, 200, 0)}
 
 # Carga los pesos del modelo YOLOv8 directamente desde el disco.
 def load_model(model_path: str) -> YOLO:
@@ -35,7 +33,7 @@ def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.5) -> 
     image   = cv2.imread(image_path)
 
     if len(results.boxes) == 0:
-        print("No se detectaron placas en la imagen.")
+        print("No se detectaron placas de motos en la imagen.")
         return
 
     ocr = build_reader()
@@ -44,7 +42,7 @@ def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.5) -> 
         x1, y1, x2, y2 = map(int, box.xyxy[0])
         conf            = float(box.conf[0])
         plate_class     = CLASSES.get(int(box.cls[0]), "unknown")
-        color           = _COLORS.get(plate_class, (200, 200, 200))
+        color           = _COLORS.get(plate_class, (0, 255, 0))
 
         # Aplica recorte, preprocesamiento y lectura OCR a la región de la placa.
         roi        = crop_plate_roi(image, x1, y1, x2, y2)
@@ -52,12 +50,10 @@ def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.5) -> 
         raw_text   = read_text(ocr, processed)
         plate_text = correct_plate(raw_text)
 
-        # Evalúa la restricción de pico y placa y genera el reporte por consola.
-        pico = has_pico_placa(vehicle_type=plate_class, plate_text=plate_text)
-        print(build_report(pico))
+        print(f"Moto detectada -> Placa extraída: {plate_text} | Precisión del recorte: {conf:.1%}")
 
         # Configura y dibuja las etiquetas visuales junto al cuadro delimitador.
-        label = f"{plate_text} | {plate_class} | {conf:.0%} "
+        label = f"{plate_text} | {conf:.0%} "
         cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
         _draw_label(image, label, x1, y1, color)
 
