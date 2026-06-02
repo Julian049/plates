@@ -1,3 +1,4 @@
+Flask
 ultralytics
 torch
 opencv-python-headless

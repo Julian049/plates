@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Detector de Placas · Moto</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+</head>
+<body>
+
+  <header class="hero">
+    <div class="hero-content">
+      <h1>Detector de <span>placas</span> de moto</h1>
+      <p>Sube una imagen y obtén la placa detectada, estadísticas visuales y el registro histórico al instante.</p>
+    </div>
+  </header>
+
+  <main class="container">
+
+    {% if model_error %}
+      <div class="alert alert-danger">
+        <strong>Error de modelo:</strong> {{ model_error }}
+      </div>
+    {% endif %}
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-warning">
+          <ul>
+            {% for msg in messages %}
+              <li>{{ msg }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <section class="card upload-card">
+      <h2>Subir imagen</h2>
+      <p>Formato aceptado: <strong>JPG, JPEG, PNG</strong> · Tamaño máximo: <strong>{{ max_size_mb }} MB</strong></p>
+
+      <form action="/" method="post" enctype="multipart/form-data" id="upload-form">
+        <label class="file-label" for="image">
+          <div class="file-label-icon">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <input type="file" name="image" id="image" accept="image/png, image/jpeg" required />
+          <span id="file-label-text">Selecciona o arrastra una imagen aquí</span>
+        </label>
+        <div class="file-hint" id="file-hint">Elige una imagen clara donde la placa sea visible.</div>
+        <button type="submit" class="button" id="submit-btn">
+          <span class="btn-text">Detectar placa</span>
+        </button>
+      </form>
+    </section>
+
+    {% if result %}
+      <section class="card result-card">
+        <h2>Resultado de detección</h2>
+
+        {% if console_output %}
+          <div class="section-block">
+            <h3>Salida del backend</h3>
+            <pre class="console-box">{{ console_output }}</pre>
+          </div>
+        {% endif %}
+
+        <div class="images-grid">
+
+          {% if result.result_image_url %}
+            <div class="image-card">
+              <div class="image-card-header">
+                <span class="image-card-dot"></span>
+                <h3>Imagen de resultado</h3>
+              </div>
+              <img src="{{ result.result_image_url }}" alt="Imagen de resultado" loading="lazy" />
+            </div>
+          {% endif %}
+
+          <div class="image-card">
+            <div class="image-card-header">
+              <span class="image-card-dot"></span>
+              <h3>Estadísticas — gráfica de pastel</h3>
+            </div>
+            <img src="{{ result.pie_chart_url }}" alt="Gráfica de pastel" loading="lazy" />
+          </div>
+
+          <div class="image-card">
+            <div class="image-card-header">
+              <span class="image-card-dot"></span>
+              <h3>Estadísticas — gráfica de barras</h3>
+            </div>
+            <img src="{{ result.bar_chart_url }}" alt="Gráfica de barras" loading="lazy" />
+          </div>
+
+        </div>
+
+        <div class="section-block">
+          <h3>Historial de detecciones</h3>
+          {% if history %}
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Archivo</th>
+                    <th>Placa</th>
+                    <th>Confianza</th>
+                    <th>Categoría</th>
+                    <th>Fecha / Hora</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in history %}
+                    <tr>
+                      <td>{{ item.archivo }}</td>
+                      <td>{{ item.placa }}</td>
+                      <td>{{ "{:.1%}".format(item.confianza) if item.confianza is not none else "0%" }}</td>
+                      <td>{{ item.categoria }}</td>
+                      <td>{{ item.timestamp }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          {% else %}
+            <p style="color: var(--muted); font-size: 0.93rem;">No hay datos en el JSON aún.</p>
+          {% endif %}
+          <p class="json-link">Ver archivo JSON: <a href="{{ result.json_url }}" target="_blank">detections.json</a></p>
+        </div>
+      </section>
+    {% endif %}
+
+  </main>
+
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

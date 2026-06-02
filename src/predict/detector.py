@@ -4,6 +4,8 @@ import json
 
 import cv2
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
 
@@ -111,13 +113,31 @@ def _generate_bar_chart(history: list) -> None:
 # Ejecuta el pipeline completo de inferencia sobre una imagen dada.
 # 1. Detecta cajas con YOLO. 2. Aplica OCR y corrige lectura por cada caja.
 # 3. Verifica restricción de pico y placa. 4. Dibuja resultados y guarda la imagen.
-def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.5) -> None:
+def _log(message: str, logs: list) -> None:
+    print(message)
+    logs.append(message)
+
+
+def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.5) -> dict:
+    logs = []
     results = model(image_path, conf=conf_threshold, imgsz=1024)[0]
-    image   = cv2.imread(image_path)
+    image = cv2.imread(image_path)
     history = _load_history()
+    result_image_path = None
+
+    if image is None:
+        _log(f"No se pudo cargar la imagen: {image_path}", logs)
+        return {
+            "logs": logs,
+            "result_image": None,
+            "pie_chart": str(OUT_DIR / "chart_pie.png"),
+            "bar_chart": str(OUT_DIR / "chart_bar.png"),
+            "history": history,
+            "json_path": str(DETECTIONS_JSON),
+        }
 
     if len(results.boxes) == 0:
-        print("No se detectaron placas en la imagen.")
+        _log("No se detectaron placas en la imagen.", logs)
 
         history.append({
             "archivo": Path(image_path).name,
@@ -129,34 +149,40 @@ def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.5) -> 
         _save_history(history)
         _generate_pie_chart(history)
         _generate_bar_chart(history)
-        return
+
+        _log(f"Gráficas y JSON actualizados en: {OUT_DIR}", logs)
+        return {
+            "logs": logs,
+            "result_image": None,
+            "pie_chart": str(OUT_DIR / "chart_pie.png"),
+            "bar_chart": str(OUT_DIR / "chart_bar.png"),
+            "history": history,
+            "json_path": str(DETECTIONS_JSON),
+        }
 
     ocr = build_reader()
 
     for box in results.boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
-        conf            = float(box.conf[0])
-        plate_class     = CLASSES.get(int(box.cls[0]), "unknown")
-        color           = _COLORS.get(plate_class, (0, 255, 0))
+        conf = float(box.conf[0])
+        plate_class = CLASSES.get(int(box.cls[0]), "unknown")
+        color = _COLORS.get(plate_class, (0, 255, 0))
 
-        # Aplica recorte, preprocesamiento y lectura OCR a la región de la placa.
-        roi        = crop_plate_roi(image, x1, y1, x2, y2)
-        processed  = preprocess_for_ocr(roi)
-        raw_text   = read_text(ocr, processed)
+        roi = crop_plate_roi(image, x1, y1, x2, y2)
+        processed = preprocess_for_ocr(roi)
+        raw_text = read_text(ocr, processed)
         plate_text = correct_plate(raw_text)
 
         is_car = "vehículo diferente" in plate_text
         category = "Otro vehículo" if is_car else "Moto válida"
 
-        print(f"Placa extraída: {plate_text} | Confianza: {conf:.1%} | {category}")
+        _log(f"Placa extraída: {plate_text} | Confianza: {conf:.1%} | {category}", logs)
 
-        # Configura y dibuja las etiquetas visuales junto al cuadro delimitador.
         box_color = (0, 0, 255) if is_car else color
         label = f"{plate_text if not is_car else 'No es moto'} | {conf:.0%}"
         cv2.rectangle(image, (x1, y1), (x2, y2), box_color, 2)
         _draw_label(image, label, x1, y1, box_color)
 
-        # Acumula en historial
         history.append({
             "archivo": Path(image_path).name,
             "placa": plate_text if not is_car else "Otro vehículo",
@@ -167,10 +193,19 @@ def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.5) -> 
 
     output_path = OUT_DIR / ("result_" + Path(image_path).name)
     cv2.imwrite(str(output_path), image)
-    print(f"\nImagen guardada en: {output_path}")
+    result_image_path = str(output_path)
+    _log(f"\nImagen guardada en: {output_path}", logs)
 
-    # Persiste historial y regenera gráficas
     _save_history(history)
     _generate_pie_chart(history)
     _generate_bar_chart(history)
-    print(f"Gráficas y JSON actualizados en: {OUT_DIR}")
+    _log(f"Gráficas y JSON actualizados en: {OUT_DIR}", logs)
+
+    return {
+        "logs": logs,
+        "result_image": result_image_path,
+        "pie_chart": str(OUT_DIR / "chart_pie.png"),
+        "bar_chart": str(OUT_DIR / "chart_bar.png"),
+        "history": history,
+        "json_path": str(DETECTIONS_JSON),
+    }

@@ -12,5 +12,110 @@
     "confianza": 0.8588,
     "categoria": "Moto válida",
     "timestamp": "2026-05-31 22:57:58"
+  },
+  {
+    "archivo": "Como-sacar-el-duplicado-de-la-placa-para-una-moto.jpg",
+    "placa": "—",
+    "confianza": 0,
+    "categoria": "Sin detección",
+    "timestamp": "2026-06-01 17:04:02"
+  },
+  {
+    "archivo": "c_url_original.38tvo8kwzdiztu.jpg",
+    "placa": "COZ09Z",
+    "confianza": 0.7929,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:12:37"
+  },
+  {
+    "archivo": "motos-colombia-780x470.jpg",
+    "placa": "INUF2G",
+    "confianza": 0.8861,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:13:26"
+  },
+  {
+    "archivo": "Como-sacar-el-duplicado-de-la-placa-para-una-moto.jpg",
+    "placa": "—",
+    "confianza": 0,
+    "categoria": "Sin detección",
+    "timestamp": "2026-06-01 17:14:05"
+  },
+  {
+    "archivo": "12.jpg",
+    "placa": "—",
+    "confianza": 0,
+    "categoria": "Sin detección",
+    "timestamp": "2026-06-01 17:14:43"
+  },
+  {
+    "archivo": "155.jpg",
+    "placa": "OJM64F",
+    "confianza": 0.8337,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:16:04"
+  },
+  {
+    "archivo": "155.jpg",
+    "placa": "OJM64F",
+    "confianza": 0.8337,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:26:58"
+  },
+  {
+    "archivo": "155.jpg",
+    "placa": "OJM64F",
+    "confianza": 0.8337,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:32:50"
+  },
+  {
+    "archivo": "155.jpg",
+    "placa": "OJM64F",
+    "confianza": 0.8337,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:39:08"
+  },
+  {
+    "archivo": "placa.jpg",
+    "placa": "IJOX7C",
+    "confianza": 0.7148,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:39:24"
+  },
+  {
+    "archivo": "placa.jpg",
+    "placa": "IJOX7C",
+    "confianza": 0.7148,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:41:41"
+  },
+  {
+    "archivo": "placa.jpg",
+    "placa": "IJOX7C",
+    "confianza": 0.7148,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:42:16"
+  },
+  {
+    "archivo": "placa.jpg",
+    "placa": "IJOX7C",
+    "confianza": 0.7148,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:45:54"
+  },
+  {
+    "archivo": "placa.jpg",
+    "placa": "IJOX7C",
+    "confianza": 0.7148,
+    "categoria": "Moto válida",
+    "timestamp": "2026-06-01 17:46:26"
+  },
+  {
+    "archivo": "placa2.jpg",
+    "placa": "Otro vehículo",
+    "confianza": 0.9079,
+    "categoria": "Otro vehículo",
+    "timestamp": "2026-06-01 17:47:17"
   }
 ]
