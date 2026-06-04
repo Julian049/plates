@@ -118,7 +118,7 @@ def _log(message: str, logs: list) -> None:
     logs.append(message)
 
 
-def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.5) -> dict:
+def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.05) -> dict:
     logs = []
     results = model(image_path, conf=conf_threshold, imgsz=1024)[0]
     image = cv2.imread(image_path)

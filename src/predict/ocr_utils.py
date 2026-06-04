@@ -64,7 +64,7 @@ def correct_plate(text: str) -> str:
         if chars[5].isdigit():
             chars[5] = _NUMBER_TO_LETTER.get(chars[5], chars[5])
 
-    if chars[3].isdigit() and chars[4].isdigit() and chars[5].isdigit():
+    if length == 6 and chars[3].isdigit() and chars[4].isdigit() and chars[5].isdigit():
         return "La imagen parece corresponder a un vehículo diferente a una moto"
 
     return "".join(chars)
