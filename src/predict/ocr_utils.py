@@ -31,7 +31,7 @@ def read_text(reader: easyocr.Reader, image) -> str:
 
 # Aplica heurísticas de corrección basadas en el estándar de placas vehiculares en Colombia (AAA000).
 # Identifica confusiones típicas del OCR (como leer 'O' por '0' o '8' por 'B') y fuerza el
-# tipo de carácter correcto según su posición (3 letras seguidas de 3 números).
+# tipo de carácter correcto según su posición (3 letras seguidas de 2 números y 1 letra (si aplica)).
 def correct_plate(text: str) -> str:
     clean = re.sub(r"[^A-Z0-9]", "", text.upper())
 
@@ -39,13 +39,11 @@ def correct_plate(text: str) -> str:
         temp = clean.replace("IM", "W").replace("VV", "W")
 
         # Validamos si el reemplazo es lógico.
-        # Una placa colombiana tiene números estrictamente en las posiciones 3 y 4.
         if len(temp) >= 5:
             # Verificamos si en la nueva cadena las posiciones 3 y 4 son números
-            # (o letras que el OCR suele confundir con números, como la 'S' o la 'O').
             valid_nums = set("0123456789OIZSBGD")
             if temp[3] in valid_nums and temp[4] in valid_nums:
-                clean = temp  # El reemplazo encaja perfecto, lo aplicamos.
+                clean = temp
 
     chars = list(clean[:6])
     length = len(chars)

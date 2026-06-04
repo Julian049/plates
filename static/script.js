@@ -5,7 +5,6 @@ const form          = document.getElementById('upload-form');
 const submitBtn     = document.getElementById('submit-btn');
 const fileLabel     = document.querySelector('.file-label');
 
-/* ── File selection feedback ── */
 if (fileInput) {
   fileInput.addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -27,7 +26,6 @@ if (fileInput) {
   });
 }
 
-/* ── Drag & drop ── */
 if (fileLabel) {
   ['dragenter', 'dragover'].forEach(evt =>
     fileLabel.addEventListener(evt, (e) => {
@@ -54,7 +52,6 @@ if (fileLabel) {
   });
 }
 
-/* ── Submit loading state ── */
 if (form && submitBtn) {
   form.addEventListener('submit', () => {
     submitBtn.classList.add('loading');
@@ -62,7 +59,6 @@ if (form && submitBtn) {
   });
 }
 
-/* ── Scroll-reveal for image cards ── */
 const observer = new IntersectionObserver((entries) => {
   entries.forEach((entry) => {
     if (entry.isIntersecting) {

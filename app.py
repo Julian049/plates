@@ -1,7 +1,8 @@
 from pathlib import Path
 import json
+import time
 
-from flask import Flask, flash, redirect, render_template, request, send_from_directory, url_for
+from flask import Flask, flash, redirect, render_template, request, send_from_directory, url_for, session
 from werkzeug.utils import secure_filename
 
 from src.config.config import BEST_MODEL, OUT_DIR
@@ -55,25 +56,16 @@ def out_file(filename: str):
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    result = None
-    console_output = None
-    history = get_history()
-    errors = []
-
     if request.method == "POST":
         if model is None:
-            flash("El modelo de detección no está disponible. Revisa la configuración del servidor.")
+            flash("El modelo no está disponible.")
             return redirect(url_for("index"))
 
-        if "image" not in request.files:
+        if "image" not in request.files or request.files["image"].filename == "":
             flash("No se seleccionó ninguna imagen.")
             return redirect(url_for("index"))
 
         image_file = request.files["image"]
-        if image_file.filename == "":
-            flash("No se seleccionó ninguna imagen.")
-            return redirect(url_for("index"))
-
         if not allowed_file(image_file.filename):
             flash("Solo se permiten archivos JPG y PNG.")
             return redirect(url_for("index"))
@@ -83,17 +75,29 @@ def index():
         image_file.save(str(image_path))
 
         result = run_detection(str(image_path), model)
-        console_output = "\n".join(result.get("logs", []))
-        history = result.get("history", history)
 
-        if result.get("result_image"):
-            result["result_image_url"] = url_for("out_file", filename=Path(result["result_image"]).name)
-        else:
-            result["result_image_url"] = None
+        session['show_results'] = True
+        session['console_output'] = "\n".join(result.get("logs", []))
+        session['result_image_name'] = Path(result["result_image"]).name if result.get("result_image") else None
 
-        result["pie_chart_url"] = url_for("out_file", filename="chart_pie.png")
-        result["bar_chart_url"] = url_for("out_file", filename="chart_bar.png")
-        result["json_url"] = url_for("out_file", filename="detections.json")
+        return redirect(url_for("index"))
+
+    result = None
+    console_output = None
+    history = get_history()
+
+    if session.pop('show_results', False):
+        img_name = session.pop('result_image_name', None)
+
+        timestamp = int(time.time())
+
+        result = {
+            "result_image_url": f"{url_for('out_file', filename=img_name)}?t={timestamp}" if img_name else None,
+            "pie_chart_url": f"{url_for('out_file', filename='chart_pie.png')}?t={timestamp}",
+            "bar_chart_url": f"{url_for('out_file', filename='chart_bar.png')}?t={timestamp}",
+            "json_url": url_for("out_file", filename="detections.json")
+        }
+        console_output = session.pop('console_output', None)
 
     return render_template(
         "index.html",
