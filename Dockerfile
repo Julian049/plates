@@ -13,7 +13,14 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY src/ src/
-COPY out/runs/train/plates/weights/best.pt best.pt
+RUN python -c "from easyocr import Reader; Reader(['es', 'en'], gpu=False)"
 
-ENTRYPOINT ["python", "-m", "src.predict.predict"]
+COPY src/ src/
+COPY static/ static/
+COPY templates/ templates/
+COPY out/runs/train/plates/weights/best.pt out/runs/train/plates/weights/best.pt
+COPY app.py .
+
+EXPOSE 5000
+
+CMD ["python", "app.py"]

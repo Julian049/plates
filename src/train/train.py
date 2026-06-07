@@ -36,12 +36,12 @@ def train(model: YOLO, yaml_path: Path, args: argparse.Namespace, device: str):
         save_period=10,
         # Parámetros de aumentación de datos adaptados a placas.
         flipud=0.0,
-        fliplr=0.0,  # <-- CAMBIO 1: Pásalo a 0.0 (Voltear placas como espejo arruina el aprendizaje visual del texto)
+        fliplr=0.0,
         mosaic=1.0,
         hsv_h=0.015,
         hsv_s=0.7,
         hsv_v=0.4,
-        scale=0.5,  # <-- CAMBIO 2: AÑADIR. Fuerza el zoom aleatorio para recortar el carro y dejar solo la placa.
+        scale=0.5,
         degrees=15.
     )
 

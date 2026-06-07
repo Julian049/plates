@@ -1,30 +1,26 @@
-from pathlib import Path
-from datetime import datetime
 import json
+from datetime import datetime
+from pathlib import Path
 
 import cv2
-import numpy as np
 import matplotlib
+import numpy as np
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from ultralytics import YOLO
 
-from src.config.config import OUT_DIR
 from src.predict.image_utils import crop_plate_roi, preprocess_for_ocr
-from src.predict.ocr_utils import build_reader, read_text, correct_plate
+from src.predict.ocr_utils import read_text, correct_plate
 
-# Índice de clase → etiqueta interna
 CLASSES = {0: "placa"}
-
-# Color BGR por clase (verde = particular, naranja = servicio público)
 _COLORS = {"placa": (0, 200, 0)}
-DETECTIONS_JSON = OUT_DIR / "detections.json"
 
-# Carga los pesos del modelo YOLOv8 directamente desde el disco.
+
 def load_model(model_path: str) -> YOLO:
     return YOLO(model_path)
 
-# Dibuja un rectángulo de fondo sólido con texto blanco encima para mejorar la legibilidad.
+
 def _draw_label(image: np.ndarray, label: str, x1: int, y1: int, color: tuple) -> None:
     (w, h), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2)
     cv2.rectangle(image, (x1, y1 - h - 10), (x1 + w, y1), color, -1)
@@ -32,24 +28,19 @@ def _draw_label(image: np.ndarray, label: str, x1: int, y1: int, color: tuple) -
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
 
-def _load_history() -> list:
-    """Lee el JSON acumulativo; si no existe devuelve lista vacía."""
-    if DETECTIONS_JSON.exists():
-        with open(DETECTIONS_JSON, "r", encoding="utf-8") as f:
+def _load_history(json_path: Path) -> list:
+    if json_path.exists():
+        with open(json_path, "r", encoding="utf-8") as f:
             return json.load(f)
     return []
 
 
-def _save_history(history: list) -> None:
-    """Sobreescribe el JSON con el historial actualizado."""
-    with open(DETECTIONS_JSON, "w", encoding="utf-8") as f:
+def _save_history(history: list, json_path: Path) -> None:
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
-def _generate_pie_chart(history: list) -> None:
-    """
-    Torta: proporción de resultados en toda la sesión.
-    Categorías: Moto válida / Otro vehículo / Sin detección
-    """
+
+def _generate_pie_chart(history: list, output_dir: Path) -> None:
     counts = {"Moto válida": 0, "Otro vehículo": 0, "Sin detección": 0}
     for entry in history:
         counts[entry["categoria"]] += 1
@@ -64,15 +55,11 @@ def _generate_pie_chart(history: list) -> None:
     ax.set_title("Distribución de resultados", fontsize=14, fontweight="bold")
 
     plt.tight_layout()
-    plt.savefig(OUT_DIR / "chart_pie.png", dpi=120)
+    plt.savefig(output_dir / "chart_pie.png", dpi=120)
     plt.close(fig)
 
 
-def _generate_bar_chart(history: list) -> None:
-    """
-    Barras: confianza del modelo por cada detección (últimas 15).
-    Solo incluye registros donde hubo detección real (confianza > 0).
-    """
+def _generate_bar_chart(history: list, output_dir: Path) -> None:
     detected = [e for e in history if e["confianza"] > 0][-15:]
 
     if not detected:
@@ -93,36 +80,30 @@ def _generate_bar_chart(history: list) -> None:
     ax.set_title("Confianza por detección (últimas 15)", fontsize=14, fontweight="bold")
     ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda y, _: f"{y:.0%}"))
 
-    # Línea de umbral en 50%
     ax.axhline(0.5, color="gray", linestyle="--", linewidth=1, label="Umbral 50%")
     ax.legend(fontsize=9)
 
-    # Valor encima de cada barra
     for bar, val in zip(bars, values):
         ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.02,
                 f"{val:.0%}", ha="center", va="bottom", fontsize=8)
 
     plt.tight_layout()
-    plt.savefig(OUT_DIR / "chart_bar.png", dpi=120)
+    plt.savefig(output_dir / "chart_bar.png", dpi=120)
     plt.close(fig)
 
 
-
-
-
-# Ejecuta el pipeline completo de inferencia sobre una imagen dada.
-# 1. Detecta cajas con YOLO. 2. Aplica OCR y corrige lectura por cada caja.
-# 3. Verifica restricción de pico y placa. 4. Dibuja resultados y guarda la imagen.
 def _log(message: str, logs: list) -> None:
     print(message)
     logs.append(message)
 
 
-def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.05) -> dict:
+def run_detection(image_path: str, model: YOLO, ocr, output_dir: Path, conf_threshold: float = 0.05) -> dict:
     logs = []
+    json_path = output_dir / "detections.json"
+    history = _load_history(json_path)
+
     results = model(image_path, conf=conf_threshold, imgsz=1024)[0]
     image = cv2.imread(image_path)
-    history = _load_history()
     result_image_path = None
 
     if image is None:
@@ -130,10 +111,10 @@ def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.05) ->
         return {
             "logs": logs,
             "result_image": None,
-            "pie_chart": str(OUT_DIR / "chart_pie.png"),
-            "bar_chart": str(OUT_DIR / "chart_bar.png"),
+            "pie_chart": str(output_dir / "chart_pie.png"),
+            "bar_chart": str(output_dir / "chart_bar.png"),
             "history": history,
-            "json_path": str(DETECTIONS_JSON),
+            "json_path": str(json_path),
         }
 
     if len(results.boxes) == 0:
@@ -146,21 +127,18 @@ def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.05) ->
             "categoria": "Sin detección",
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         })
-        _save_history(history)
-        _generate_pie_chart(history)
-        _generate_bar_chart(history)
+        _save_history(history, json_path)
+        _generate_pie_chart(history, output_dir)
+        _generate_bar_chart(history, output_dir)
 
-        _log(f"Gráficas y JSON actualizados en: {OUT_DIR}", logs)
         return {
             "logs": logs,
             "result_image": None,
-            "pie_chart": str(OUT_DIR / "chart_pie.png"),
-            "bar_chart": str(OUT_DIR / "chart_bar.png"),
+            "pie_chart": str(output_dir / "chart_pie.png"),
+            "bar_chart": str(output_dir / "chart_bar.png"),
             "history": history,
-            "json_path": str(DETECTIONS_JSON),
+            "json_path": str(json_path),
         }
-
-    ocr = build_reader()
 
     for box in results.boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -191,21 +169,19 @@ def run_detection(image_path: str, model: YOLO, conf_threshold: float = 0.05) ->
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         })
 
-    output_path = OUT_DIR / ("result_" + Path(image_path).name)
+    output_path = output_dir / ("result_" + Path(image_path).name)
     cv2.imwrite(str(output_path), image)
     result_image_path = str(output_path)
-    _log(f"\nImagen guardada en: {output_path}", logs)
 
-    _save_history(history)
-    _generate_pie_chart(history)
-    _generate_bar_chart(history)
-    _log(f"Gráficas y JSON actualizados en: {OUT_DIR}", logs)
+    _save_history(history, json_path)
+    _generate_pie_chart(history, output_dir)
+    _generate_bar_chart(history, output_dir)
 
     return {
         "logs": logs,
         "result_image": result_image_path,
-        "pie_chart": str(OUT_DIR / "chart_pie.png"),
-        "bar_chart": str(OUT_DIR / "chart_bar.png"),
+        "pie_chart": str(output_dir / "chart_pie.png"),
+        "bar_chart": str(output_dir / "chart_bar.png"),
         "history": history,
-        "json_path": str(DETECTIONS_JSON),
+        "json_path": str(json_path),
     }
