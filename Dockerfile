@@ -21,6 +21,6 @@ COPY templates/ templates/
 COPY out/runs/train/plates/weights/best.pt out/runs/train/plates/weights/best.pt
 COPY app.py .
 
-EXPOSE 5000
+EXPOSE 7860
 
 CMD ["python", "app.py"]

@@ -98,7 +98,7 @@ def index():
         image_path = UPLOAD_FOLDER / filename
         image_file.save(str(image_path))
 
-        result = run_detection(str(image_path), model, ocr_global, user_dir)
+        result = run_detection(str(image_path), model, ocr_global, user_dir, conf_threshold=0.30)
 
         session['show_results'] = True
         session['console_output'] = "\n".join(result.get("logs", []))
@@ -133,4 +133,4 @@ def index():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=7860, debug=False)

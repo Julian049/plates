@@ -23,11 +23,17 @@ def read_text(reader: easyocr.Reader, image) -> str:
     raw = reader.readtext(
         image,
         detail=0,
-        paragraph=True,
+        paragraph=False,
         allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
     )
-    # Limpia y une los fragmentos resultantes eliminando cualquier espacio residual.
-    return "".join(raw).upper().replace(" ", "")
+    valid_texts = [t for t in raw if len(t) >= 3]
+
+    if valid_texts:
+        text = "".join(valid_texts)
+    else:
+        text = "".join(raw)
+
+    return text.upper().replace(" ", "")
 
 # Aplica heurísticas de corrección basadas en el estándar de placas vehiculares en Colombia (AAA000).
 # Identifica confusiones típicas del OCR (como leer 'O' por '0' o '8' por 'B') y fuerza el

@@ -97,50 +97,53 @@ def _log(message: str, logs: list) -> None:
     logs.append(message)
 
 
-def run_detection(image_path: str, model: YOLO, ocr, output_dir: Path, conf_threshold: float = 0.05) -> dict:
+def _no_detection_result(reason: str, image_path: str, logs: list, history: list,
+                         json_path: Path, output_dir: Path) -> dict:
+    _log(reason, logs)
+    history.append({
+        "archivo": Path(image_path).name,
+        "placa": "—",
+        "confianza": 0,
+        "categoria": "Sin detección",
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    })
+    _save_history(history, json_path)
+    _generate_pie_chart(history, output_dir)
+    _generate_bar_chart(history, output_dir)
+    return {
+        "logs": logs,
+        "result_image": None,
+        "pie_chart": str(output_dir / "chart_pie.png"),
+        "bar_chart": str(output_dir / "chart_bar.png"),
+        "history": history,
+        "json_path": str(json_path),
+    }
+
+
+def run_detection(image_path: str, model: YOLO, ocr, output_dir: Path,
+                  conf_threshold: float = 0.30) -> dict:
     logs = []
     json_path = output_dir / "detections.json"
     history = _load_history(json_path)
 
-    results = model(image_path, conf=conf_threshold, imgsz=1024)[0]
+    results = model(image_path, imgsz=640)[0]
     image = cv2.imread(image_path)
-    result_image_path = None
 
     if image is None:
-        _log(f"No se pudo cargar la imagen: {image_path}", logs)
-        return {
-            "logs": logs,
-            "result_image": None,
-            "pie_chart": str(output_dir / "chart_pie.png"),
-            "bar_chart": str(output_dir / "chart_bar.png"),
-            "history": history,
-            "json_path": str(json_path),
-        }
+        return _no_detection_result(
+            f"No se pudo cargar la imagen: {image_path}",
+            image_path, logs, history, json_path, output_dir,
+        )
 
-    if len(results.boxes) == 0:
-        _log("No se detectaron placas en la imagen.", logs)
+    valid_boxes = [box for box in results.boxes if float(box.conf[0]) >= conf_threshold]
 
-        history.append({
-            "archivo": Path(image_path).name,
-            "placa": "—",
-            "confianza": 0,
-            "categoria": "Sin detección",
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        })
-        _save_history(history, json_path)
-        _generate_pie_chart(history, output_dir)
-        _generate_bar_chart(history, output_dir)
+    if not valid_boxes:
+        return _no_detection_result(
+            "No se detectaron placas con confianza suficiente.",
+            image_path, logs, history, json_path, output_dir,
+        )
 
-        return {
-            "logs": logs,
-            "result_image": None,
-            "pie_chart": str(output_dir / "chart_pie.png"),
-            "bar_chart": str(output_dir / "chart_bar.png"),
-            "history": history,
-            "json_path": str(json_path),
-        }
-
-    for box in results.boxes:
+    for box in valid_boxes:
         x1, y1, x2, y2 = map(int, box.xyxy[0])
         conf = float(box.conf[0])
         plate_class = CLASSES.get(int(box.cls[0]), "unknown")
@@ -171,7 +174,6 @@ def run_detection(image_path: str, model: YOLO, ocr, output_dir: Path, conf_thre
 
     output_path = output_dir / ("result_" + Path(image_path).name)
     cv2.imwrite(str(output_path), image)
-    result_image_path = str(output_path)
 
     _save_history(history, json_path)
     _generate_pie_chart(history, output_dir)
@@ -179,7 +181,7 @@ def run_detection(image_path: str, model: YOLO, ocr, output_dir: Path, conf_thre
 
     return {
         "logs": logs,
-        "result_image": result_image_path,
+        "result_image": str(output_path),
         "pie_chart": str(output_dir / "chart_pie.png"),
         "bar_chart": str(output_dir / "chart_bar.png"),
         "history": history,
